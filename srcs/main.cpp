@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:26:02 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/09 17:00:14 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/10 13:20:42 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 
 int main() {
     try {
-        Server server("8080", "your_password"); // Remplacer par le port et le mot de passe souhaités
+        Server server("6667", "your_password"); // Remplacer par le port et le mot de passe souhaités
         server.start();
     } catch (const std::exception &e) {
         std::cerr << "Exception caught in main: " << e.what() << std::endl;
