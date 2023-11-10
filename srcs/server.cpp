@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:39 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/10 17:04:09 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/10 22:52:34 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -227,6 +227,7 @@ void Server::handleJoinCommand(Client* client, const std::string& channelName) {
         channels[channelName] = channel;
     }
     channel->addMember(client);
+    channel->debugPrintMembers(); 
     std::ostringstream response;
     response << ":" << client->getNickName() << "!" << client->getUserName() 
              << "@" << client->getHostName() << " JOIN :" << channelName << "\r\n";
@@ -244,12 +245,11 @@ void Server::handleJoinCommand(Client* client, const std::string& channelName) {
     // Envoyer la liste des membres du canal
     response.str(""); // Effacer le flux
     response << ":server.name 353 " << client->getNickName() << " = " << channelName << " :";
-    for (std::set<Client*>::const_iterator it = channel->getMembers().begin(); it != channel->getMembers().end(); ++it) {
-        if (*it == NULL) {
-            break; // Arrêter la boucle si un élément nul est trouvé
+    const std::set<Client*>& members = channel->getMembers();
+    for (std::set<Client*>::const_iterator memberIt = members.begin(); memberIt != members.end(); ++memberIt) {
+        if (*memberIt != NULL) {
+            response << (*memberIt)->getNickName() << " ";
         }
-
-        response << (*it)->getNickName() << " ";
     }
     response << "\r\n:server.name 366 " << client->getNickName() << " " << channelName 
              << " :End of /NAMES list.\r\n";
