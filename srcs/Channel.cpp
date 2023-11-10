@@ -34,9 +34,9 @@ const std::string Channel::getTopic() const {return topic;}
 
 const std::string Channel::getName() const {return name;}
 
-const std::set<Client*> Channel::getMembers() const {return members;}
+const std::set<Client*>& Channel::getMembers() const {return members;}
 
-const std::set<Client*> Channel::getOperators() const {return operators;}
+const std::set<Client*>& Channel::getOperators() const {return operators;}
 
 void Channel::broadcastPrivateMessage(const std::string& message, const Client* sender) {
     for (std::set<Client*>::iterator it = members.begin(); it != members.end(); ++it) {

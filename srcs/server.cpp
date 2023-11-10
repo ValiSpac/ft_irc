@@ -244,7 +244,9 @@ void Server::handleJoinCommand(Client* client, const std::string& channelName) {
     // Envoyer la liste des membres du canal
     response.str(""); // Effacer le flux
     response << ":server.name 353 " << client->getNickName() << " = " << channelName << " :";
+	
     for (std::set<Client*>::const_iterator it = channel->getMembers().begin(); it != channel->getMembers().end(); ++it) {
+
         if (*it == NULL) {
             break; // Arrêter la boucle si un élément nul est trouvé
         }

@@ -25,8 +25,8 @@ public:
 
     void addMember(Client* client);
     const std::string getName() const;
-    const std::set<Client*> getMembers() const;
-    const std::set<Client*> getOperators() const;
+    const std::set<Client*>& getMembers() const;
+    const std::set<Client*>& getOperators() const;
     const std::string getTopic() const;
 
     void setTopic(const std::string& topic);
