@@ -1,28 +1,37 @@
-NAME		=	a.out
-CFLAGS		=	-Wall -Wextra -Werror -std=c++98
-CC			=	g++
-MAKE		=	make
+# Nom de votre executable
+NAME = ircserv
 
-HEADERS		=	./Server.hpp ./User.hpp
-INCLUDE		=	
-OBJS		=	$(patsubst %.cpp,%.o,$(SRCS))
-SRCS		=	./main.cpp ./Server.cpp ./User.cpp
+# Compilateur et flags de compilation
+CXX = g++
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I includes
 
-all :
-	make $(NAME)
+# Dossiers
+SRCDIR = srcs
+OBJDIR = objs
+INCDIR = includes
 
-$(NAME): $(OBJS)
-	$(CC) $(CFLAGS) -o $(NAME) $(OBJS)
+# Fichiers sources et objets
+SRC = $(wildcard $(SRCDIR)/*.cpp)
+OBJ = $(SRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
-%.o : %.cpp $(HEADERS) Makefile
-	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
+# Règles
+all: $(NAME)
 
-clean :
-	rm -f $(OBJS)
+$(NAME): $(OBJ)
+	$(CXX) $(OBJ) -o $(NAME)
 
-fclean : clean
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
+
+clean:
+	rm -rf $(OBJDIR)
+
+fclean: clean
 	rm -f $(NAME)
 
-re : fclean all
+re: fclean all
 
-.PHONY : all clean fclean re
+.PHONY: all clean fclean re
