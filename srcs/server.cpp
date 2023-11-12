@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:39 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/10 22:52:34 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/11 21:29:16 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -212,7 +212,7 @@ void Server::log(const std::string& message) {
 
 void Server::handleJoinCommand(Client* client, const std::string& channelName) {
     if (client->getNickName().empty() || client->getNickName().substr(0, 5) == "Guest") {
-        std::string errorMsg = ":server.name 431 :No nickname given\r\n";
+        std::string errorMsg = ":" + serverName + " 431 :No nickname given\r\n";
         client->sendMessage(errorMsg);
         return;
     }
@@ -237,21 +237,21 @@ void Server::handleJoinCommand(Client* client, const std::string& channelName) {
     // Envoyer le sujet du canal (si disponible)
     if (!channel->getTopic().empty()) {
         response.str(""); // Effacer le flux
-        response << ":server.name 332 " << client->getNickName() << " " << channelName 
+        response << ":" + serverName + " 332 " << client->getNickName() << " " << channelName 
                  << " :" << channel->getTopic() << "\r\n";
         client->sendMessage(response.str());
     }
 
     // Envoyer la liste des membres du canal
     response.str(""); // Effacer le flux
-    response << ":server.name 353 " << client->getNickName() << " = " << channelName << " :";
+    response << ":" + serverName + " 353 " << client->getNickName() << " = " << channelName << " :" << "\r\n";
     const std::set<Client*>& members = channel->getMembers();
     for (std::set<Client*>::const_iterator memberIt = members.begin(); memberIt != members.end(); ++memberIt) {
         if (*memberIt != NULL) {
             response << (*memberIt)->getNickName() << " ";
         }
     }
-    response << "\r\n:server.name 366 " << client->getNickName() << " " << channelName 
+    response << "\r\n:" + serverName + " 366 " << client->getNickName() << " " << channelName 
              << " :End of /NAMES list.\r\n";
     client->sendMessage(response.str());
 }
@@ -273,26 +273,32 @@ void Server::handleNickCommand(Client* client, const std::string& nickname) {
 }
 
 void Server::handlePrivMsgCommand(Client* sender, const std::string& target, const std::string& message) {
-    if (target[0] == '#') {  // La cible est un canal
+    if (target[0] == '#') {  // La cible un canal
         Channel* channel = getChannelByName(target);
         if (channel) {
-            // Construire le message complet
-            std::string fullMessage = ":" + sender->getNickName() + "!" + sender->getUserName() + "@" + sender->getHostName() + " PRIVMSG " + target + message + "\r\n";
+            std::string fullMessage = ":" + sender->getNickName() + "!" + sender->getUserName() 
+                                  + "@" + sender->getHostName() + " PRIVMSG " + target + " :" + message + "\r\n";
 
-            // Parcourir tous les membres du canal et envoyer le message
             const std::set<Client*>& members = channel->getMembers();
             for (std::set<Client*>::const_iterator it = members.begin(); it != members.end(); ++it) {
-                if (*it != sender) {  // Ne pas renvoyer le message à l'expéditeur
+                if (*it != sender) {
                     (*it)->sendMessage(fullMessage);
                 }
             }
+
+            // Feedback à l'expéditeur
+            sender->sendMessage(":" + serverName + sender->getNickName() + " " + target + " :Message sent\r\n");
         } else {
             sender->sendMessage(":" + serverName + " 403 " + sender->getNickName() + " " + target + " :No such channel\r\n");
         }
-    } else {  // Cible est un utilisateur
+    } else {  // La cible est un utilisateur
         Client* recipient = getClientByNickname(target);
         if (recipient) {
-            recipient->sendMessage(":" + sender->getNickName() + "!" + sender->getUserName() + "@" + sender->getHostName() + " PRIVMSG " + target + " :" + message + "\r\n");
+            recipient->sendMessage(":" + sender->getNickName() + "!" + sender->getUserName() 
+                                   + "@" + sender->getHostName() + " PRIVMSG " + target + " :" + message + "\r\n");
+
+            // Feedback à l'expéditeur
+            sender->sendMessage(":" + serverName + " 301 " + sender->getNickName() + " " + target + " :Message sent\r\n");
         } else {
             sender->sendMessage(":" + serverName + " 401 " + sender->getNickName() + " " + target + " :No such nick/channel\r\n");
         }
