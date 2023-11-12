@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: vpac <vpac@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:39 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/12 16:08:02 by vpac             ###   ########.fr       */
+/*   Updated: 2023/11/12 20:36:20 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -282,7 +282,9 @@ void Server::handlePrivMsgCommand(Client* sender, const std::string& target, con
             const std::set<Client*>& members = channel->getMembers();
             for (std::set<Client*>::const_iterator it = members.begin(); it != members.end(); ++it) {
                 if ((*it) != sender)
+                {
                     (*it)->sendMessage(fullMessage);
+                }
             }
 
             // Feedback à l'expéditeur
@@ -294,9 +296,6 @@ void Server::handlePrivMsgCommand(Client* sender, const std::string& target, con
         if (recipient) {
             recipient->sendMessage(":" + sender->getNickName() + "!" + sender->getUserName()
                                    + "@" + sender->getHostName() + " PRIVMSG " + target + " :" + message + "\r\n");
-
-            // Feedback à l'expéditeur
-            sender->sendMessage(":" + serverName + " 301 " + sender->getNickName() + " " + target + " :Message sent\r\n");
         } else {
             sender->sendMessage(":" + serverName + " 401 " + sender->getNickName() + " " + target + " :No such nick/channel\r\n");
         }
