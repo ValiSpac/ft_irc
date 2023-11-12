@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:39 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/12 11:46:17 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/12 20:36:20 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -288,7 +288,6 @@ void Server::handlePrivMsgCommand(Client* sender, const std::string& target, con
             }
 
             // Feedback à l'expéditeur
-            sender->sendMessage(":" + serverName + sender->getNickName() + " " + target + " :Message sent\r\n");
         } else {
             sender->sendMessage(":" + serverName + " 403 " + sender->getNickName() + " " + target + " :No such channel\r\n");
         }
@@ -303,20 +302,87 @@ void Server::handlePrivMsgCommand(Client* sender, const std::string& target, con
     }
 }
 
-void Server::handleQuitCommand(Client* client, const std::string& message) {
-    std::ostringstream response;
-    response << ":" << client->getNickName() << "!" << client->getUserName()
-             << "@" << client->getHostName() << " QUIT :" << message << "\r\n";
+void Server::handleKickCommand(Client* sender, const std::string& channelName, const std::string& targetNickname) {
+    Channel* channel = getChannelByName(channelName);
+    if (channel) {
+        Client* target = getClientByNickname(targetNickname);
+        if (target) {
+            if (channel->isOperator(sender))
+            {
+                channel->removeMember(target);
 
-    // Envoyer le message de déconnexion à tous les clients
-    for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
-        if (it->second != client) {
-            it->second->sendMessage(response.str());
+                std::ostringstream response;
+                response << ":" << serverName << " KICK " << channelName << " " << targetNickname
+                         << " :You have been kicked by " << sender->getNickName() << "\r\n";
+                target->sendMessage(response.str());
+
+                response.str("");
+                response << ":" << serverName << " 441 " << sender->getNickName() << " " << channelName
+                         << " " << targetNickname << " :Kicked by " << sender->getNickName() << "\r\n";
+                sender->sendMessage(response.str());
+            }
+            else
+            {
+                sender->sendMessage(":" + serverName + " 482 " + sender->getNickName() + " " + channelName
+                                   + " :You're not channel operator\r\n");
+            }
+        }
+        else
+        {
+            sender->sendMessage(":" + serverName + " 401 " + sender->getNickName() + " " + targetNickname
+                               + " :No such nick/channel\r\n");
         }
     }
+    else
+    {
+        sender->sendMessage(":" + serverName + " 403 " + sender->getNickName() + " " + channelName
+                           + " :No such channel\r\n");
+    }
+}
 
-    // Déconnecter le client
-    on_client_disconnect(client->getSocket());
+void Server::handleModeCommand(Client* setter, const std::string& channelName,std::istringstream& mode) {
+    Channel* channel = getChannelByName(channelName);
+    if (channel) {
+        channel->setMode(setter, mode);
+    } else {
+        setter->sendMessage(":" + serverName + " 403 " + setter->getNickName() + " " + channelName
+                           + " :No such channel\r\n");
+    }
+}
+
+void Server::handleTopicCommand(Client* client, const std::string& channelName, const std::string& newTopic) {
+    Channel* channel = getChannelByName(channelName);
+    if (channel) {
+        channel->handleTopicCommand(client, newTopic);
+    } else {
+        client->sendMessage(":" + serverName + " 403 " + client->getNickName() + " " + channelName
+                           + " :No such channel\r\n");
+    }
+}
+
+void Server::handleInviteCommand(Client* sender, const std::string& channelName, const std::string& targetNickname)
+{
+    Channel* channel = getChannelByName(channelName);
+    if (channel) {
+        if (channel->isOperator(sender)) {
+            Client* target = getClientByNickname(targetNickname);
+            if (target) {
+                channel->inviteClient(target);
+                sender->sendMessage(":" + serverName + " 341 " + sender->getNickName() + " " + targetNickname
+                                     + " " + channelName + " :Inviting " + targetNickname + "\r\n");
+                target->sendMessage(":" + serverName + " INVITE " + targetNickname + " " + channelName + "\r\n");
+            } else {
+                sender->sendMessage(":" + serverName + " 401 " + sender->getNickName() + " " + targetNickname
+                                   + " :No such nick/channel\r\n");
+            }
+        } else {
+            sender->sendMessage(":" + serverName + " 482 " + sender->getNickName() + " " + channelName
+                               + " :You're not channel operator\r\n");
+        }
+    } else {
+        sender->sendMessage(":" + serverName + " 403 " + sender->getNickName() + " " + channelName
+                           + " :No such channel\r\n");
+    }
 }
 
 void Server::parseClientCommand(int fd, const std::string& command) {
@@ -348,13 +414,30 @@ void Server::parseClientCommand(int fd, const std::string& command) {
         }
         handlePrivMsgCommand(client, target, message);
     }
-    if (cmd == "QUIT") {
-        std::string message;
-        std::getline(iss, message);
-        if (!message.empty() && message[0] == ':') {
-            message = message.substr(1);  // Enlever le ':' initial
-        }
-        handleQuitCommand(client, message);
+    if (cmd == "KICK") {
+        std::string channelName, targetNickname;
+        iss >> channelName >> targetNickname;
+        handleKickCommand(client, channelName, targetNickname);
+    }
+    if (cmd == "TOPIC")
+    {
+    std::string channelName, newTopic;
+    iss >> channelName;
+    std::getline(iss, newTopic);
+    if (!newTopic.empty() && newTopic[0] == ':') {
+        newTopic = newTopic.substr(1);
+    }
+    handleTopicCommand(client, channelName, newTopic);
+    }
+    if (cmd == "INVITE") {
+        std::string channelName, targetNickname;
+        iss >> targetNickname >> channelName;
+        handleInviteCommand(client, channelName, targetNickname);
+    }
+    if (cmd == "MODE"){
+        std::string channelName;
+        iss >> channelName;
+        handleModeCommand(client, channelName, iss);
     }
     // Ajouter ici la gestion d'autres commandes...
 }

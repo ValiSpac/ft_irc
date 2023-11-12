@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:12 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/12 11:42:12 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/12 20:35:06 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,10 @@ public:
     void handleJoinCommand(Client* client, const std::string& channelName);
     void handleNickCommand(Client* client, const std::string& nickname);
     void handlePrivMsgCommand(Client* sender, const std::string& target, const std::string& message);
-    void handleQuitCommand(Client* client, const std::string& channelName);
+    void handleKickCommand(Client* sender, const std::string& channelName, const std::string& targetNickname);
+    void handleModeCommand(Client* setter, const std::string& channelName, std::istringstream& mode);
+    void handleTopicCommand(Client* client, const std::string& channelName, const std::string& newTopic);
+    void handleInviteCommand(Client* sender, const std::string& channelName, const std::string& targetNickname);
 
     Channel* getChannelByName(const std::string& name);
     Client* getClientByNickname(const std::string& nickname);
