@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/10 14:47:10 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/10 16:55:51 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/10 22:43:20 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,13 +14,32 @@
 #include <algorithm>
 #include <iostream>
 
+void Channel::debugPrintMembers() const {
+    std::cout << "Membres du canal " << name << ":" << std::endl;
+    for (std::set<Client*>::const_iterator it = members.begin(); it != members.end(); ++it) {
+        if (*it != NULL) {
+            std::cout << " - " << (*it)->getNickName() << std::endl;
+        }
+    }
+
+    std::cout << "Opérateurs du canal:" << std::endl;
+    for (std::set<Client*>::const_iterator it = operators.begin(); it != operators.end(); ++it) {
+        if (*it != NULL) {
+            std::cout << " - " << (*it)->getNickName() << std::endl;
+        }
+    }
+}
+
 Channel::Channel(const std::string& name) : name(name) {}
 
 void Channel::addMember(Client* client) {
-    if (members.empty()) {
-        operators.insert(client);
+    if (client == NULL) {
+        return; // Ne pas ajouter si le client est NULL
     }
     members.insert(client);
+    if (members.size() == 1) {
+        operators.insert(client); // Ajouter comme opérateur si c'est le premier membre
+    }
 }
 
 void Channel::removeMember(Client* client) {

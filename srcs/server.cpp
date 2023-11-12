@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
+/*   By: vpac <vpac@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:39 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/10 17:04:09 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/12 11:06:29 by vpac             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,14 +29,14 @@
 
 #define MAX_CONNECTIONS 10
 
-Server::Server(const std::string &port, const std::string &pass) 
+Server::Server(const std::string &port, const std::string &pass)
     : _port(port), _pass(pass), _running(true)
 {
     _sock = create_socket();
     serverName = "ircserv";
 }
 
-Server::~Server() 
+Server::~Server()
 {
     for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
         delete it->second;
@@ -72,7 +72,7 @@ int Server::create_socket() {
     return sock_fd;
 }
 
-void Server::start() 
+void Server::start()
 {
     pollfd srv;
     srv.fd = _sock;
@@ -105,7 +105,7 @@ void Server::start()
     }
 }
 
-void Server::on_client_connect() 
+void Server::on_client_connect()
 {
     int fd;
     sockaddr_in addr;
@@ -193,7 +193,7 @@ void Server::on_client_message(int fd) {
 }
 
 
-std::string Server::read_message(int ) 
+std::string Server::read_message(int )
 {
     // Similar to your existing read_message function
     // Add additional logic as per your requirement
@@ -212,7 +212,7 @@ void Server::log(const std::string& message) {
 
 void Server::handleJoinCommand(Client* client, const std::string& channelName) {
     if (client->getNickName().empty() || client->getNickName().substr(0, 5) == "Guest") {
-        std::string errorMsg = ":server.name 431 :No nickname given\r\n";
+        std::string errorMsg = ":" + serverName + " 431 :No nickname given\r\n";
         client->sendMessage(errorMsg);
         return;
     }
@@ -227,8 +227,9 @@ void Server::handleJoinCommand(Client* client, const std::string& channelName) {
         channels[channelName] = channel;
     }
     channel->addMember(client);
+    channel->debugPrintMembers();
     std::ostringstream response;
-    response << ":" << client->getNickName() << "!" << client->getUserName() 
+    response << ":" << client->getNickName() << "!" << client->getUserName()
              << "@" << client->getHostName() << " JOIN :" << channelName << "\r\n";
 
     client->sendMessage(response.str());
@@ -236,24 +237,21 @@ void Server::handleJoinCommand(Client* client, const std::string& channelName) {
     // Envoyer le sujet du canal (si disponible)
     if (!channel->getTopic().empty()) {
         response.str(""); // Effacer le flux
-        response << ":server.name 332 " << client->getNickName() << " " << channelName 
+        response << ":" + serverName + " 332 " << client->getNickName() << " " << channelName
                  << " :" << channel->getTopic() << "\r\n";
         client->sendMessage(response.str());
     }
 
     // Envoyer la liste des membres du canal
     response.str(""); // Effacer le flux
-    response << ":server.name 353 " << client->getNickName() << " = " << channelName << " :";
-	
-    for (std::set<Client*>::const_iterator it = channel->getMembers().begin(); it != channel->getMembers().end(); ++it) {
-
-        if (*it == NULL) {
-            break; // Arrêter la boucle si un élément nul est trouvé
+    response << ":" + serverName + " 353 " << client->getNickName() << " = " << channelName << " :" << "\r\n";
+    const std::set<Client*>& members = channel->getMembers();
+    for (std::set<Client*>::const_iterator memberIt = members.begin(); memberIt != members.end(); ++memberIt) {
+        if (*memberIt != NULL) {
+            response << (*memberIt)->getNickName() << " ";
         }
-
-        response << (*it)->getNickName() << " ";
     }
-    response << "\r\n:server.name 366 " << client->getNickName() << " " << channelName 
+    response << "\r\n:" + serverName + " 366 " << client->getNickName() << " " << channelName
              << " :End of /NAMES list.\r\n";
     client->sendMessage(response.str());
 }
@@ -275,26 +273,30 @@ void Server::handleNickCommand(Client* client, const std::string& nickname) {
 }
 
 void Server::handlePrivMsgCommand(Client* sender, const std::string& target, const std::string& message) {
-    if (target[0] == '#') {  // La cible est un canal
+    if (target[0] == '#') {  // La cible un canal
         Channel* channel = getChannelByName(target);
         if (channel) {
-            // Construire le message complet
-            std::string fullMessage = ":" + sender->getNickName() + "!" + sender->getUserName() + "@" + sender->getHostName() + " PRIVMSG " + target + message + "\r\n";
+            std::string fullMessage = ":" + sender->getNickName() + "!" + sender->getUserName()
+                                  + "@" + sender->getHostName() + " PRIVMSG " + target + " :" + message + "\r\n";
 
-            // Parcourir tous les membres du canal et envoyer le message
             const std::set<Client*>& members = channel->getMembers();
             for (std::set<Client*>::const_iterator it = members.begin(); it != members.end(); ++it) {
-                if (*it != sender) {  // Ne pas renvoyer le message à l'expéditeur
                     (*it)->sendMessage(fullMessage);
-                }
             }
+
+            // Feedback à l'expéditeur
+            sender->sendMessage(":" + serverName + sender->getNickName() + " " + target + " :Message sent\r\n");
         } else {
             sender->sendMessage(":" + serverName + " 403 " + sender->getNickName() + " " + target + " :No such channel\r\n");
         }
-    } else {  // Cible est un utilisateur
+    } else {  // La cible est un utilisateur
         Client* recipient = getClientByNickname(target);
         if (recipient) {
-            recipient->sendMessage(":" + sender->getNickName() + "!" + sender->getUserName() + "@" + sender->getHostName() + " PRIVMSG " + target + " :" + message + "\r\n");
+            recipient->sendMessage(":" + sender->getNickName() + "!" + sender->getUserName()
+                                   + "@" + sender->getHostName() + " PRIVMSG " + target + " :" + message + "\r\n");
+
+            // Feedback à l'expéditeur
+            sender->sendMessage(":" + serverName + " 301 " + sender->getNickName() + " " + target + " :Message sent\r\n");
         } else {
             sender->sendMessage(":" + serverName + " 401 " + sender->getNickName() + " " + target + " :No such nick/channel\r\n");
         }

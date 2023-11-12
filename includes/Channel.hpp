@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/10 11:26:05 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/10 15:12:39 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/10 22:42:48 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,7 @@ public:
     void removeMember(Client* client);
     void broadcastPrivateMessage(const std::string& message, const Client* sender);
 
+    void debugPrintMembers() const;
 private:
     std::string name;
     std::set<Client*> members;
