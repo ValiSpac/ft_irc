@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: vpac <vpac@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/10 14:47:10 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/12 16:07:03 by vpac             ###   ########.fr       */
+/*   Updated: 2023/11/12 20:21:20 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,7 +82,7 @@ bool Channel::isOperator(Client* client)
         return false;
 }
 
-void Channel::setOperator(std::string& target)
+void Channel::setOperator(std::string& target,Client* setter)
 {
     std::set<Client*>::iterator memberIt = members.end();
     for (std::set<Client*>::iterator it = members.begin(); it != members.end(); ++it) {
@@ -173,7 +173,7 @@ void Channel::setMode(Client* setter,std::istringstream& iss)
                 }
                 break;
             case 'o':
-                    setOperator(options);
+                    setOperator(options, setter);
                     break;
             case 'l':
                 if (options == "")

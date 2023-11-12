@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: vpac <vpac@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:12 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/12 15:54:58 by vpac             ###   ########.fr       */
+/*   Updated: 2023/11/12 20:22:19 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ public:
     void handleKickCommand(Client* sender, const std::string& channelName, const std::string& targetNickname);
     void handleModeCommand(Client* setter, const std::string& channelName, std::istringstream& mode);
     void handleTopicCommand(Client* client, const std::string& channelName, const std::string& newTopic);
-    void handleInviteCommand(Client* sender, const std::string& channelName, const std::string& targetNickname)
+    void handleInviteCommand(Client* sender, const std::string& channelName, const std::string& targetNickname);
 
     Channel* getChannelByName(const std::string& name);
     Client* getClientByNickname(const std::string& nickname);
