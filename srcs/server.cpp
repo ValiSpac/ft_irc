@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: vpac <vpac@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:39 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/12 11:06:29 by vpac             ###   ########.fr       */
+/*   Updated: 2023/11/12 11:46:17 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -281,7 +281,10 @@ void Server::handlePrivMsgCommand(Client* sender, const std::string& target, con
 
             const std::set<Client*>& members = channel->getMembers();
             for (std::set<Client*>::const_iterator it = members.begin(); it != members.end(); ++it) {
+                if ((*it) != sender)
+                {
                     (*it)->sendMessage(fullMessage);
+                }
             }
 
             // Feedback à l'expéditeur
@@ -294,13 +297,26 @@ void Server::handlePrivMsgCommand(Client* sender, const std::string& target, con
         if (recipient) {
             recipient->sendMessage(":" + sender->getNickName() + "!" + sender->getUserName()
                                    + "@" + sender->getHostName() + " PRIVMSG " + target + " :" + message + "\r\n");
-
-            // Feedback à l'expéditeur
-            sender->sendMessage(":" + serverName + " 301 " + sender->getNickName() + " " + target + " :Message sent\r\n");
         } else {
             sender->sendMessage(":" + serverName + " 401 " + sender->getNickName() + " " + target + " :No such nick/channel\r\n");
         }
     }
+}
+
+void Server::handleQuitCommand(Client* client, const std::string& message) {
+    std::ostringstream response;
+    response << ":" << client->getNickName() << "!" << client->getUserName()
+             << "@" << client->getHostName() << " QUIT :" << message << "\r\n";
+
+    // Envoyer le message de déconnexion à tous les clients
+    for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+        if (it->second != client) {
+            it->second->sendMessage(response.str());
+        }
+    }
+
+    // Déconnecter le client
+    on_client_disconnect(client->getSocket());
 }
 
 void Server::parseClientCommand(int fd, const std::string& command) {
@@ -331,6 +347,14 @@ void Server::parseClientCommand(int fd, const std::string& command) {
             message = message.substr(1);  // Enlever le ':' initial
         }
         handlePrivMsgCommand(client, target, message);
+    }
+    if (cmd == "QUIT") {
+        std::string message;
+        std::getline(iss, message);
+        if (!message.empty() && message[0] == ':') {
+            message = message.substr(1);  // Enlever le ':' initial
+        }
+        handleQuitCommand(client, message);
     }
     // Ajouter ici la gestion d'autres commandes...
 }
