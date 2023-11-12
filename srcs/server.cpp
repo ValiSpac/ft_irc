@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:39 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/12 22:23:27 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/12 22:58:53 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -427,6 +427,14 @@ void Server::handlePartCommand(Client* client, const std::string& channelName) {
     }
 }
 
+void Server::handleQuitCommand(Client* client, const std::string& message)
+{
+    std::ostringstream response;
+    response << ":" << client->getNickName() << "!" << client->getUserName()
+             << "@" << client->getHostName() << " QUIT :" << message << "\r\n";
+    client->sendMessage(response.str());
+    on_client_disconnect(client->getSocket());
+}
 void Server::parseClientCommand(int fd, const std::string& command) {
     Client* client = getClientByFD(fd);
     if (!client) {
@@ -496,7 +504,31 @@ void Server::parseClientCommand(int fd, const std::string& command) {
         }
         handlePartCommand(client, channelName);
     }
-    // Ajouter ici la gestion d'autres commandes...
+    if (cmd == "LIST") {
+        std::ostringstream response;
+        response << ":" << serverName << " 321 " << client->getNickName() << " Channel :Users Name\r\n";
+        client->sendMessage(response.str());
+        for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); ++it) {
+            response.str("");
+            response << ":" << serverName << " 322 " << client->getNickName() << " " << it->first << " " << it->second->getMembers().size() << " :";
+            for (std::set<Client*>::const_iterator it2 = it->second->getMembers().begin(); it2 != it->second->getMembers().end(); ++it2) {
+                if (*it2 != NULL) {
+                    response << (*it2)->getNickName() << " ";
+                }
+            }
+            response << "\r\n";
+            client->sendMessage(response.str());
+        }
+    }
+    if (cmd == "QUIT")
+    {
+        std::string message;
+        std::getline(iss, message);
+        if (!message.empty() && message[0] == ':') {
+            message = message.substr(1);
+        }
+        handleQuitCommand(client, message);
+    }
 }
 
 Client* Server::getClientByFD(int fd) {
