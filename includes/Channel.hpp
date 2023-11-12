@@ -6,15 +6,18 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/10 11:26:05 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/12 20:21:34 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/12 20:46:19 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 #ifndef CHANNEL_H
 #define CHANNEL_H
 
 #include <string>
 #include <set>
+#include <sstream>
+#include <iostream>
 #include "Client.hpp"
 
 class Client;
@@ -35,6 +38,7 @@ public:
     void setKey(const std::string& key);
     void setOperator(std::string& target, Client *setter);
     void setTopicOperatorOnly(bool value);
+    bool isMember(Client* client) const;
 
     void inviteClient(Client* client);
     bool isTopicOperatorOnly() const;

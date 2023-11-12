@@ -6,7 +6,11 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:39 by akhellad          #+#    #+#             */
+<<<<<<< HEAD
 /*   Updated: 2023/11/12 20:36:20 by akhellad         ###   ########.fr       */
+=======
+/*   Updated: 2023/11/12 12:46:26 by akhellad         ###   ########.fr       */
+>>>>>>> ae2afd1 (pipi)
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -244,15 +248,20 @@ void Server::handleJoinCommand(Client* client, const std::string& channelName) {
 
     // Envoyer la liste des membres du canal
     response.str(""); // Effacer le flux
-    response << ":" + serverName + " 353 " << client->getNickName() << " = " << channelName << " :" << "\r\n";
+    response << ":" << serverName << " 353 " << client->getNickName() << " = " << channelName << " :";
     const std::set<Client*>& members = channel->getMembers();
-    for (std::set<Client*>::const_iterator memberIt = members.begin(); memberIt != members.end(); ++memberIt) {
-        if (*memberIt != NULL) {
-            response << (*memberIt)->getNickName() << " ";
+    for (std::set<Client*>::const_iterator it = members.begin(); it != members.end(); ++it) {
+        Client* member = *it;
+        if (member != NULL) {
+            response << member->getNickName() << " ";
         }
     }
-    response << "\r\n:" + serverName + " 366 " << client->getNickName() << " " << channelName
-             << " :End of /NAMES list.\r\n";
+    response << "\r\n";
+
+    // Envoi de la fin de la liste des membres
+    response << ":" << serverName << " 366 " << client->getNickName() << " " << channelName << " :End of NAMES list\r\n";
+
+    // Envoi de la réponse complète au client
     client->sendMessage(response.str());
 }
 
@@ -275,7 +284,7 @@ void Server::handleNickCommand(Client* client, const std::string& nickname) {
 void Server::handlePrivMsgCommand(Client* sender, const std::string& target, const std::string& message) {
     if (target[0] == '#') {  // La cible un canal
         Channel* channel = getChannelByName(target);
-        if (channel) {
+        if (channel && channel->isMember(sender)) {
             std::string fullMessage = ":" + sender->getNickName() + "!" + sender->getUserName()
                                   + "@" + sender->getHostName() + " PRIVMSG " + target + " :" + message + "\r\n";
 
@@ -288,7 +297,10 @@ void Server::handlePrivMsgCommand(Client* sender, const std::string& target, con
             }
 
             // Feedback à l'expéditeur
-        } else {
+        } else if (channel && !channel->isMember(sender)){
+            sender->sendMessage(":" + serverName + " 404 " + sender->getNickName() + " " + target + " :Cannot send to channel\r\n");
+        }
+         else if (channel) {
             sender->sendMessage(":" + serverName + " 403 " + sender->getNickName() + " " + target + " :No such channel\r\n");
         }
     } else {  // La cible est un utilisateur
@@ -385,6 +397,22 @@ void Server::handleInviteCommand(Client* sender, const std::string& channelName,
     }
 }
 
+void Server::handlePartCommand(Client* client, const std::string& channelName) {
+    std::string realChannelName = channelName.substr(0, channelName.find(' '));
+    Channel* channel = getChannelByName(realChannelName);
+    if (channel && channel->isMember(client)) {
+        channel->removeMember(client);
+        std::ostringstream response;
+        response << ":" << client->getNickName() << "!" << client->getUserName()
+                 << "@" << client->getHostName() << " PART " << channelName << "\r\n";
+        client->sendMessage(response.str());
+    } else if (channel) {
+        client->sendMessage(":" + serverName + " 442 " + client->getNickName() + " " + channelName + " :You're not on that channel\r\n");
+    } else {
+        client->sendMessage(":" + serverName + " 403 " + client->getNickName() + " " + channelName + " :No such channel\r\n");
+    }
+}
+
 void Server::parseClientCommand(int fd, const std::string& command) {
     Client* client = getClientByFD(fd);
     if (!client) {
@@ -438,6 +466,21 @@ void Server::parseClientCommand(int fd, const std::string& command) {
         std::string channelName;
         iss >> channelName;
         handleModeCommand(client, channelName, iss);
+    }
+    if (cmd == "PART") {
+        std::string channelName;
+        iss >> channelName;
+        if (!channelName.empty())
+        {
+            // Enlever le texte après le nom du canal
+            std::string channelName;
+            iss >> channelName;
+            size_t pos = channelName.find(' ');
+            if (pos != std::string::npos) {
+                channelName = channelName.substr(0, pos);
+            }
+        }
+        handlePartCommand(client, channelName);
     }
     // Ajouter ici la gestion d'autres commandes...
 }

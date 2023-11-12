@@ -6,9 +6,10 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:12 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/12 20:35:06 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/12 20:45:20 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 #ifndef SERVER_HPP
 #define SERVER_HPP
@@ -35,6 +36,8 @@ public:
     void handleModeCommand(Client* setter, const std::string& channelName, std::istringstream& mode);
     void handleTopicCommand(Client* client, const std::string& channelName, const std::string& newTopic);
     void handleInviteCommand(Client* sender, const std::string& channelName, const std::string& targetNickname);
+    void handleQuitCommand(Client* client, const std::string& message);
+    void handlePartCommand(Client* client, const std::string& channelName);
 
     Channel* getChannelByName(const std::string& name);
     Client* getClientByNickname(const std::string& nickname);

@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/10 14:47:10 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/12 20:21:20 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/12 20:45:49 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -190,4 +190,8 @@ void Channel::setMode(Client* setter,std::istringstream& iss)
     std::string is = iss.str();
     std::string modeMessage = ":" + setter->getNickName() + " MODE " + name + " " + is + "\r\n";
     broadcastPrivateMessage(modeMessage, NULL);
+}
+
+bool Channel::isMember(Client* client) const {
+    return members.find(client) != members.end();
 }
