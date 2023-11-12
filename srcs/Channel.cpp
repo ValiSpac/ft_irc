@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/10 14:47:10 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/12 20:45:49 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/12 22:15:29 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -126,6 +126,8 @@ const std::set<Client*>& Channel::getMembers() const {return members;}
 
 const std::set<Client*>& Channel::getOperators() const {return operators;}
 
+int Channel::getUserLimit() {return userLimit;}
+
 const std::string Channel::getTopic() const {return topic;}
 
 void Channel::broadcastPrivateMessage(const std::string& message, const Client* sender) {
@@ -142,7 +144,10 @@ void Channel::setKey(const std::string& key) {channelKey = key;}
 
 void Channel::setUserLimit(int userLimit)
 {
-    this->userLimit = userLimit;
+    if(userLimit > 0)
+    {
+        this->userLimit = userLimit;
+    }
 }
 
 void Channel::setMode(Client* setter,std::istringstream& iss)
@@ -194,4 +199,18 @@ void Channel::setMode(Client* setter,std::istringstream& iss)
 
 bool Channel::isMember(Client* client) const {
     return members.find(client) != members.end();
+}
+
+bool Channel::isInInvitList(Client* client) const {
+    return inviteList.find(client) != inviteList.end();
+}
+
+bool Channel::isChannelFull()
+{
+    if (getUserLimit() == -1)
+        return false;
+    else if (getUserLimit() > (int)getMembers().size())
+        return false;
+    else
+        return true;
 }

@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:12 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/12 20:45:20 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/12 20:52:27 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,8 @@
 #include "Client.hpp"
 #include <cstdio>
 #include <Channel.hpp>
+#include <iostream>
+#include <sstream>
 
 class Server {
 public:

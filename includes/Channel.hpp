@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/10 11:26:05 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/12 20:46:19 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/12 21:53:04 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,7 @@ public:
     const std::string getName() const;
     const std::set<Client*>& getMembers() const;
     const std::set<Client*>& getOperators() const;
+    int getUserLimit();
     const std::string getTopic() const;
     bool isInviteOnly();
 
@@ -39,6 +40,8 @@ public:
     void setOperator(std::string& target, Client *setter);
     void setTopicOperatorOnly(bool value);
     bool isMember(Client* client) const;
+    bool isInInvitList(Client* client) const;
+    bool isChannelFull();
 
     void inviteClient(Client* client);
     bool isTopicOperatorOnly() const;

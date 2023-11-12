@@ -6,11 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:39 by akhellad          #+#    #+#             */
-<<<<<<< HEAD
-/*   Updated: 2023/11/12 20:36:20 by akhellad         ###   ########.fr       */
-=======
-/*   Updated: 2023/11/12 12:46:26 by akhellad         ###   ########.fr       */
->>>>>>> ae2afd1 (pipi)
+/*   Updated: 2023/11/12 22:23:27 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +26,7 @@
 #include <cstddef>
 #include <algorithm>
 #include <sstream>
+#include <string>
 
 #define MAX_CONNECTIONS 10
 
@@ -224,9 +221,26 @@ void Server::handleJoinCommand(Client* client, const std::string& channelName) {
 
     // Vérifier si le canal existe déjà
     std::map<std::string, Channel*>::iterator it = channels.find(channelName);
-    if (it != channels.end()) {
+    if (it != channels.end() && !it->second->isInviteOnly() && !it->second->isChannelFull())
+    {
         channel = it->second;
-    } else {
+    }
+    else if(it != channels.end() && it->second->isInviteOnly() && it->second->isInInvitList(client))
+    {
+        channel = it->second;
+    }
+    else if (it != channels.end() && it->second->isInviteOnly() && !it->second->isInInvitList(client))
+    {
+        std::string errorMsg = ":" + serverName + " 473 " + client->getNickName() + " " + channelName + " :Cannot join channel (+i)\r\n";
+        client->sendMessage(errorMsg);
+        return ;
+    }
+    else if (it != channels.end() && it->second->isChannelFull() ){
+        std::string errorMsg = ":" + serverName + " 471 " + client->getNickName() + " " + channelName + " :Cannot join channel (+l)\r\n";
+        client->sendMessage(errorMsg);
+        return ;
+    }
+    else {
         channel = new Channel(channelName);
         channels[channelName] = channel;
     }
