@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
+/*   By: vpac <vpac@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:39 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/12 10:37:50 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/12 11:06:29 by vpac             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,14 +29,14 @@
 
 #define MAX_CONNECTIONS 10
 
-Server::Server(const std::string &port, const std::string &pass) 
+Server::Server(const std::string &port, const std::string &pass)
     : _port(port), _pass(pass), _running(true)
 {
     _sock = create_socket();
     serverName = "ircserv";
 }
 
-Server::~Server() 
+Server::~Server()
 {
     for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
         delete it->second;
@@ -72,7 +72,7 @@ int Server::create_socket() {
     return sock_fd;
 }
 
-void Server::start() 
+void Server::start()
 {
     pollfd srv;
     srv.fd = _sock;
@@ -105,7 +105,7 @@ void Server::start()
     }
 }
 
-void Server::on_client_connect() 
+void Server::on_client_connect()
 {
     int fd;
     sockaddr_in addr;
@@ -193,7 +193,7 @@ void Server::on_client_message(int fd) {
 }
 
 
-std::string Server::read_message(int ) 
+std::string Server::read_message(int )
 {
     // Similar to your existing read_message function
     // Add additional logic as per your requirement
@@ -227,9 +227,9 @@ void Server::handleJoinCommand(Client* client, const std::string& channelName) {
         channels[channelName] = channel;
     }
     channel->addMember(client);
-    channel->debugPrintMembers(); 
+    channel->debugPrintMembers();
     std::ostringstream response;
-    response << ":" << client->getNickName() << "!" << client->getUserName() 
+    response << ":" << client->getNickName() << "!" << client->getUserName()
              << "@" << client->getHostName() << " JOIN :" << channelName << "\r\n";
 
     client->sendMessage(response.str());
@@ -237,7 +237,7 @@ void Server::handleJoinCommand(Client* client, const std::string& channelName) {
     // Envoyer le sujet du canal (si disponible)
     if (!channel->getTopic().empty()) {
         response.str(""); // Effacer le flux
-        response << ":" + serverName + " 332 " << client->getNickName() << " " << channelName 
+        response << ":" + serverName + " 332 " << client->getNickName() << " " << channelName
                  << " :" << channel->getTopic() << "\r\n";
         client->sendMessage(response.str());
     }
@@ -251,7 +251,7 @@ void Server::handleJoinCommand(Client* client, const std::string& channelName) {
             response << (*memberIt)->getNickName() << " ";
         }
     }
-    response << "\r\n:" + serverName + " 366 " << client->getNickName() << " " << channelName 
+    response << "\r\n:" + serverName + " 366 " << client->getNickName() << " " << channelName
              << " :End of /NAMES list.\r\n";
     client->sendMessage(response.str());
 }
@@ -276,7 +276,7 @@ void Server::handlePrivMsgCommand(Client* sender, const std::string& target, con
     if (target[0] == '#') {  // La cible un canal
         Channel* channel = getChannelByName(target);
         if (channel) {
-            std::string fullMessage = ":" + sender->getNickName() + "!" + sender->getUserName() 
+            std::string fullMessage = ":" + sender->getNickName() + "!" + sender->getUserName()
                                   + "@" + sender->getHostName() + " PRIVMSG " + target + " :" + message + "\r\n";
 
             const std::set<Client*>& members = channel->getMembers();
@@ -292,7 +292,7 @@ void Server::handlePrivMsgCommand(Client* sender, const std::string& target, con
     } else {  // La cible est un utilisateur
         Client* recipient = getClientByNickname(target);
         if (recipient) {
-            recipient->sendMessage(":" + sender->getNickName() + "!" + sender->getUserName() 
+            recipient->sendMessage(":" + sender->getNickName() + "!" + sender->getUserName()
                                    + "@" + sender->getHostName() + " PRIVMSG " + target + " :" + message + "\r\n");
 
             // Feedback à l'expéditeur
