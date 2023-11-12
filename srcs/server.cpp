@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:39 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/11 21:29:16 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/12 10:37:50 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -281,9 +281,7 @@ void Server::handlePrivMsgCommand(Client* sender, const std::string& target, con
 
             const std::set<Client*>& members = channel->getMembers();
             for (std::set<Client*>::const_iterator it = members.begin(); it != members.end(); ++it) {
-                if (*it != sender) {
                     (*it)->sendMessage(fullMessage);
-                }
             }
 
             // Feedback à l'expéditeur
