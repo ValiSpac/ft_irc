@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:15 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/12 11:46:05 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/13 15:06:03 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,7 @@ public:
     void setNickname(const std::string& nickname);
     std::string getHostName() const;
     int get_port() const;
+    const std::set<Channel*>& getChannels() const;
 
     void leave();
 

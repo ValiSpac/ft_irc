@@ -35,6 +35,10 @@ void Client::setNickname(const std::string& nickname) {
     this->nickName = nickname;
 }
 
+const std::set<Channel*>& Client::getChannels() const {
+    return channels;
+}
+
 int Client::get_port() const {
     return port;
 }

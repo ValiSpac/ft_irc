@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:12 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/12 20:52:27 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/13 15:05:53 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,6 @@ public:
     ~Server();
     void start();
     void parseClientCommand(int fd, const std::string& command);
-
     void handleJoinCommand(Client* client, const std::string& channelName);
     void handleNickCommand(Client* client, const std::string& nickname);
     void handlePrivMsgCommand(Client* sender, const std::string& target, const std::string& message);
@@ -40,7 +39,7 @@ public:
     void handleInviteCommand(Client* sender, const std::string& channelName, const std::string& targetNickname);
     void handleQuitCommand(Client* client, const std::string& message);
     void handlePartCommand(Client* client, const std::string& channelName);
-
+    void handleWhoCommand(Client* client, const std::string& target);
     Channel* getChannelByName(const std::string& name);
     Client* getClientByNickname(const std::string& nickname);
     Client* getClientByFD(int fd);

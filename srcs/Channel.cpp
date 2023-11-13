@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/10 14:47:10 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/13 11:58:09 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/13 14:30:29 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -150,57 +150,64 @@ void Channel::setUserLimit(int userLimit)
 
 void Channel::setMode(Client* setter,std::istringstream& iss)
 {
-    if (!isOperator(setter)) {
-        std::cerr << "Error: " << setter->getNickName() << " is not a channel operator." << std::endl;
-        // Envoyer un message d'erreur au client
-        setter->sendMessage(":" + serverName + " 482 " + setter->getNickName() + " " + name + " :You're not channel operator\r\n");
-        return;
-    }
     std::string sflag, options;
     iss >> sflag;
+    iss >> options;
     if (sflag.empty()) {
         std::string modeString = getModes(); // Assurez-vous que cette méthode existe et renvoie les modes actuels du canal
         std::string modeMessage = ":" + serverName + " 324 " + setter->getNickName() + " " + name + " " + modeString + "\r\n";
         setter->sendMessage(modeMessage);
         return;
     }
-    if (sflag.size() < 2 || (sflag[0] != '+' && sflag[0] != '-')) {
+    if (!isOperator(setter)) {
+        std::cerr << "Error: " << setter->getNickName() << " is not a channel operator." << std::endl;
+        // Envoyer un message d'erreur au client
+        setter->sendMessage(":" + serverName + " 482 " + setter->getNickName() + " " + name + " :You're not channel operator\r\n");
+        return;
+    }
+        if (sflag.size() < 2 || (sflag[0] != '+' && sflag[0] != '-')) {
         // Format de drapeau invalide
         std::string errorMessage = ":" + serverName + " 472 " + setter->getNickName() + " " + name + " :Unknown mode flag\r\n";
         setter->sendMessage(errorMessage);
         return;
     }
+
+    char sign = sflag[0];
     char flag = sflag[1];
-    iss >> options;
-        switch (flag) {
-            case 'i':
-                inviteOnly = !inviteOnly;
-                break;
-            case 't':
-                topicOperatorOnly = !topicOperatorOnly;
-                break;
-            case 'k':
-                if (channelKey.empty()) {
-                    setKey(options);
-                } else {
-                    channelKey.clear();
-                }
-                break;
-            case 'o':
-                    setOperator(options, setter);
-                    break;
-            case 'l':
-                if (options == "")
-                    setUserLimit(-1);
-                else
-                    setUserLimit(std::atoi(options.c_str()));
-                break;
-            default:
-            std::string errorMessage = ":" + setter->getNickName() + " 472 " + name
+
+    switch (flag) {
+        case 'i':
+            inviteOnly = (sign == '+');
+            break;
+        case 't':
+            topicOperatorOnly = (sign == '+');
+            break;
+        case 'k':
+            if (sign == '+' && !channelKey.empty()) {
+                setKey(options);
+            } else if (sign == '-') {
+                channelKey.clear();
+            }
+            break;
+        case 'o':
+            if (sign == '+') {
+                setOperator(options, setter);
+            }
+            break;
+        case 'l':
+            if (sign == '+' && !options.empty()) {
+                setUserLimit(std::atoi(options.c_str()));
+            } else if (sign == '-') {
+                setUserLimit(-1);
+            }
+            break;
+        default:
+            std::string errorMessage = ":" + serverName + " 472 " + setter->getNickName() + " " + name
                                      + " :Unknown mode flag\r\n";
             setter->sendMessage(errorMessage);
             return;
     }
+
     std::string is = iss.str();
     std::string modeMessage = ":" + setter->getNickName() + " MODE " + name + " " + sflag + (options.empty() ? "" : " " + options) + "\r\n";
     broadcastPrivateMessage(modeMessage, NULL);
