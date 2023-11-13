@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:39 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/12 22:58:53 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/13 11:53:52 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -168,6 +168,7 @@ void Server::on_client_disconnect(int fd) {
 }
 
 void Server::on_client_message(int fd) {
+    static std::map<int, std::string> incompleteCommands;
     char buffer[1024];  // Buffer pour lire les données
     int nbytes;
 
@@ -185,11 +186,18 @@ void Server::on_client_message(int fd) {
 
         on_client_disconnect(fd);
     } else {
-        // Traiter les données reçues
         buffer[nbytes] = '\0';
-        std::cout << "Received message from client with fd " << fd << ": " << buffer << std::endl;
+        std::string data = incompleteCommands[fd] + std::string(buffer);
+        size_t pos = 0;
 
-        parseClientCommand(fd, buffer);
+        while ((pos = data.find('\n')) != std::string::npos) {
+            std::string command = data.substr(0, pos);
+            std::cout << "Client with fd " << fd << " sent : " << command << std::endl;
+            parseClientCommand(fd, command);
+            data.erase(0, pos + 1);
+        }
+
+        incompleteCommands[fd] = data; // Stocker la commande incomplète (si elle existe)
     }
 }
 
@@ -245,37 +253,39 @@ void Server::handleJoinCommand(Client* client, const std::string& channelName) {
         channels[channelName] = channel;
     }
     channel->addMember(client);
-    channel->debugPrintMembers();
-    std::ostringstream response;
-    response << ":" << client->getNickName() << "!" << client->getUserName()
-             << "@" << client->getHostName() << " JOIN :" << channelName << "\r\n";
 
-    client->sendMessage(response.str());
+    // Préparer le message de connexion pour la diffusion
+    std::string joinMessage = ":" + client->getNickName() + "!" + client->getUserName()
+                              + "@" + client->getHostName() + " JOIN :" + channelName + "\r\n";
 
-    // Envoyer le sujet du canal (si disponible)
-    if (!channel->getTopic().empty()) {
-        response.str(""); // Effacer le flux
-        response << ":" + serverName + " 332 " << client->getNickName() << " " << channelName
-                 << " :" << channel->getTopic() << "\r\n";
-        client->sendMessage(response.str());
-    }
-
-    // Envoyer la liste des membres du canal
-    response.str(""); // Effacer le flux
-    response << ":" << serverName << " 353 " << client->getNickName() << " = " << channelName << " :";
+    // Diffuser le message de connexion à tous les membres du canal
     const std::set<Client*>& members = channel->getMembers();
     for (std::set<Client*>::const_iterator it = members.begin(); it != members.end(); ++it) {
         Client* member = *it;
         if (member != NULL) {
-            response << member->getNickName() << " ";
+            member->sendMessage(joinMessage);
         }
     }
-    response << "\r\n";
 
-    // Envoi de la fin de la liste des membres
-    response << ":" << serverName << " 366 " << client->getNickName() << " " << channelName << " :End of NAMES list\r\n";
+    // Envoyer les informations sur le canal au client qui a rejoint
+    std::ostringstream response;
 
-    // Envoi de la réponse complète au client
+    // Envoyer le sujet du canal (si disponible)
+    if (!channel->getTopic().empty()) {
+        response << ":" + serverName + " 332 " << client->getNickName() << " " << channelName
+                 << " :" << channel->getTopic() << "\r\n";
+        client->sendMessage(response.str());
+        response.str(""); // Effacer le flux
+    }
+
+    // Envoyer la liste des membres du canal au client qui a rejoint
+    response << ":" << serverName << " 353 " << client->getNickName() << " = " << channelName << " :";
+    for (std::set<Client*>::const_iterator memberIt = members.begin(); memberIt != members.end(); ++memberIt) {
+        if (*memberIt != NULL) {
+            response << (*memberIt)->getNickName() << " ";
+        }
+    }
+    response << "\r\n:" << serverName << " 366 " << client->getNickName() << " " << channelName << " :End of NAMES list\r\n";
     client->sendMessage(response.str());
 }
 

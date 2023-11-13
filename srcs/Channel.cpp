@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/10 14:47:10 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/12 22:15:29 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/13 11:45:25 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 
 Channel::Channel(const std::string& name)
     : name(name), inviteOnly(false), topicOperatorOnly(false), userLimit(-1) {
+        serverName = "ircserv";
 }
 
 void Channel::debugPrintMembers() const {
@@ -51,18 +52,15 @@ void Channel::addMember(Client* client) {
 }
 
 void Channel::handleTopicCommand(Client* setter, const std::string& newTopic) {
-    if (isOperator(setter) || !isTopicOperatorOnly())
-    {
-        setTopic(newTopic);
-
-        std::string topicMessage = ":" + setter->getNickName() + " TOPIC " + name + " :" + newTopic + "\r\n";
-        broadcastPrivateMessage(topicMessage, NULL);
-    }
-    else
-    {
-        std::string errorMessage = ":" + setter->getNickName() + " 482 " + name
-                                 + " :You're not allowed to set the topic for this channel\r\n";
+    if (isTopicOperatorOnly() && !isOperator(setter)) {
+        std::string errorMessage = ":" + serverName + " 482 " + setter->getNickName() + " " + name
+                                 + " :You're not channel operator\r\n";
         setter->sendMessage(errorMessage);
+    } else {
+        setTopic(newTopic);
+        std::string topicMessage = ":" + setter->getNickName() + "!" + setter->getUserName()
+                               + "@" + setter->getHostName() + " TOPIC " + name + " :" + newTopic + "\r\n";
+        broadcastPrivateMessage(topicMessage, NULL);
     }
 }
 
@@ -133,7 +131,7 @@ const std::string Channel::getTopic() const {return topic;}
 void Channel::broadcastPrivateMessage(const std::string& message, const Client* sender) {
     for (std::set<Client*>::iterator it = members.begin(); it != members.end(); ++it) {
         if (*it != sender) {
-            (*it)->sendMessage(message + "/r/n");
+            (*it)->sendMessage(message + "\r\n");
         }
     }
 }
@@ -152,17 +150,22 @@ void Channel::setUserLimit(int userLimit)
 
 void Channel::setMode(Client* setter,std::istringstream& iss)
 {
-    if (!isOperator(setter))
-    {
+    if (!isOperator(setter)) {
         std::cerr << "Error: " << setter->getNickName() << " is not a channel operator." << std::endl;
+        // Envoyer un message d'erreur au client
+        setter->sendMessage(":" + serverName + " 482 " + setter->getNickName() + " " + name + " :You're not channel operator\r\n");
         return;
     }
     std::string sflag, options;
     iss >> sflag;
-    iss >> options;
-    if (iss.fail())
-        options = "";
+    if (sflag.size() < 2 || (sflag[0] != '+' && sflag[0] != '-')) {
+        // Format de drapeau invalide
+        std::string errorMessage = ":" + serverName + " 472 " + setter->getNickName() + " " + name + " :Unknown mode flag\r\n";
+        setter->sendMessage(errorMessage);
+        return;
+    }
     char flag = sflag[1];
+    iss >> options;
         switch (flag) {
             case 'i':
                 inviteOnly = !inviteOnly;
@@ -193,7 +196,7 @@ void Channel::setMode(Client* setter,std::istringstream& iss)
             return;
     }
     std::string is = iss.str();
-    std::string modeMessage = ":" + setter->getNickName() + " MODE " + name + " " + is + "\r\n";
+    std::string modeMessage = ":" + setter->getNickName() + " MODE " + name + " " + sflag + (options.empty() ? "" : " " + options) + "\r\n";
     broadcastPrivateMessage(modeMessage, NULL);
 }
 

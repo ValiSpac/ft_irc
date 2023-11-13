@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/10 11:26:05 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/12 21:53:04 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/13 11:19:58 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,6 +62,7 @@ private:
     bool topicOperatorOnly;
     std::string channelKey;
     int userLimit;
+    std::string serverName;
 };
 
 #endif // CHANNEL_H
