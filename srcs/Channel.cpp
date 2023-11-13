@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/10 14:47:10 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/13 11:45:25 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/13 11:58:09 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -158,6 +158,12 @@ void Channel::setMode(Client* setter,std::istringstream& iss)
     }
     std::string sflag, options;
     iss >> sflag;
+    if (sflag.empty()) {
+        std::string modeString = getModes(); // Assurez-vous que cette méthode existe et renvoie les modes actuels du canal
+        std::string modeMessage = ":" + serverName + " 324 " + setter->getNickName() + " " + name + " " + modeString + "\r\n";
+        setter->sendMessage(modeMessage);
+        return;
+    }
     if (sflag.size() < 2 || (sflag[0] != '+' && sflag[0] != '-')) {
         // Format de drapeau invalide
         std::string errorMessage = ":" + serverName + " 472 " + setter->getNickName() + " " + name + " :Unknown mode flag\r\n";
@@ -216,4 +222,13 @@ bool Channel::isChannelFull()
         return false;
     else
         return true;
+}
+
+std::string Channel::getModes() const {
+    std::string modeString;
+    if (inviteOnly) modeString += "i";
+    if (topicOperatorOnly) modeString += "t";
+    if (!channelKey.empty()) modeString += "k";
+    // Ajouter d'autres flags de mode ici
+    return modeString.empty() ? "+" : "+" + modeString;
 }

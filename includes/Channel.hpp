@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/10 11:26:05 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/13 11:19:58 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/13 11:58:41 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,7 @@ public:
     const std::set<Client*>& getMembers() const;
     const std::set<Client*>& getOperators() const;
     int getUserLimit();
+    std::string getModes() const;
     const std::string getTopic() const;
     bool isInviteOnly();
 
