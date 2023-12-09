@@ -26,9 +26,13 @@ public:
 
     int getSocket() const;
     std::string getUserName() const;
+    void setUserName(const std::string& username);
     std::string getNickName() const;
     void setNickname(const std::string& nickname);
+    std::string getRealName() const;
+    void setRealName(const std::string& realname);
     std::string getHostName() const;
+    void setHostName(const std::string& hostname);
     int get_port() const;
     const std::set<Channel*>& getChannels() const;
 
@@ -36,13 +40,18 @@ public:
 
     void sendMessage(const std::string& message);
 
+    bool getAuthentication() const;
+    void setAuthentication(bool auth);
+
 private:
     int socket_fd;
     std::string hostName;
     std::string userName;
     std::string nickName;
+    std::string realName;
     int port;
     std::set<Channel*> channels;
+	bool authenticated;
 };
 
 #endif // CLIENT_H

@@ -5,7 +5,7 @@
 #include <sstream>
 
 Client::Client(int socket_fd, int port, const std::string& hostName)
-    : socket_fd(socket_fd), hostName(hostName), port(port) {
+    : socket_fd(socket_fd), hostName(hostName), port(port), authenticated(false) {
     std::ostringstream ss;
     ss << "Guest" << socket_fd;
     nickName = ss.str();
@@ -23,8 +23,16 @@ std::string Client::getHostName() const {
     return hostName;
 }
 
+void Client::setHostName(const std::string& hostname) {
+	this->hostName = hostname;
+}
+
 std::string Client::getUserName() const {
     return userName;
+}
+
+void Client::setUserName(const std::string& username) {
+    this->userName = username;
 }
 
 std::string Client::getNickName() const {
@@ -33,6 +41,26 @@ std::string Client::getNickName() const {
 
 void Client::setNickname(const std::string& nickname) {
     this->nickName = nickname;
+}
+
+
+std::string Client::getRealName() const {
+	return realName;
+}
+
+void Client::setRealName(const std::string& realname) {
+    this->realName = realname;
+}
+
+
+
+
+bool Client::getAuthentication() const {
+	return authenticated;
+}
+
+void Client::setAuthentication(bool auth) {
+	authenticated = auth;
 }
 
 const std::set<Channel*>& Client::getChannels() const {

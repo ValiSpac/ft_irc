@@ -32,6 +32,8 @@ public:
     void parseClientCommand(int fd, const std::string& command);
     void handleJoinCommand(Client* client, const std::string& channelName);
     void handleNickCommand(Client* client, const std::string& nickname);
+	void handlePassCommand(Client* client, const std::string& password);
+
     void handlePrivMsgCommand(Client* sender, const std::string& target, const std::string& message);
     void handleKickCommand(Client* sender, const std::string& channelName, const std::string& targetNickname);
     void handleModeCommand(Client* setter, const std::string& channelName, std::istringstream& mode);
