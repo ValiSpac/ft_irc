@@ -52,9 +52,6 @@ void Client::setRealName(const std::string& realname) {
     this->realName = realname;
 }
 
-
-
-
 bool Client::getAuthentication() const {
 	return authenticated;
 }
