@@ -84,10 +84,7 @@ void Server::start()
         if (poll(&_pfds[0], _pfds.size(), -1) < 0) {
             throw std::runtime_error("Error while polling from fd!");
         }
-        for (size_t i = 0; i < _pfds.size(); i++) { 
-            if (_pfds[i].revents == 0) {
-                continue;
-            }
+        for (size_t i = 0; i < _pfds.size(); i++) {
             if (_pfds[i].revents & (POLLHUP | POLLERR)) {
                 on_client_disconnect(_pfds[i].fd);
                 continue;
@@ -117,6 +114,7 @@ void Server::on_client_connect()
     pollfd pfd;
     pfd.fd = fd;
     pfd.events = POLLIN;
+    pfd.revents = 0;//YOU FORGOT TO FUCKING INITILIZE THE REVENTS
     _pfds.push_back(pfd);
 
     char hostname[NI_MAXHOST];
@@ -422,11 +420,11 @@ void Server::handleInviteCommand(Client* sender, const std::string& channelName,
 void Server::handlePartCommand(Client* client, const std::string& channelName) {
     std::string realChannelName = channelName.substr(0, channelName.find(' '));
     Channel* channel = getChannelByName(realChannelName);
-    
+
     if (channel && channel->isMember(client)) {
         std::string partMessage = ":" + client->getNickName() + "!" + client->getUserName()
                                   + "@" + client->getHostName() + " PART " + realChannelName + "\r\n";
-        
+
         channel->broadcastPrivateMessage(partMessage, client);
         channel->removeMember(client);
         client->sendMessage(partMessage);
@@ -496,7 +494,7 @@ void Server::parseClientCommand(int fd, const std::string& command) {
         std::string keyArgument;
         std::getline(iss, keyArgument);
         if (!keyArgument.empty() && keyArgument[0] == ' ') {
-            keyArgument = keyArgument.substr(1); 
+            keyArgument = keyArgument.substr(1);
         }
         handleJoinCommand(client, channelName, keyArgument);
     }
@@ -505,7 +503,7 @@ void Server::parseClientCommand(int fd, const std::string& command) {
         iss >> target;
         std::getline(iss, message);
         if (!message.empty() && message[0] == ':') {
-            message = message.substr(1); 
+            message = message.substr(1);
         }
         handlePrivMsgCommand(client, target, message);
     }
