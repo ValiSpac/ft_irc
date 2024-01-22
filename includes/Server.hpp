@@ -22,6 +22,7 @@
 #include <cstdio>
 #include <Channel.hpp>
 #include <iostream>
+#include <csignal>
 #include <sstream>
 
 class Server {
@@ -42,6 +43,15 @@ public:
     void handleQuitCommand(Client* client, const std::string& message);
     void handlePartCommand(Client* client, const std::string& channelName);
     void handleWhoCommand(Client* client, const std::string& target);
+    int getIfRunning()
+    {
+        return _running;
+    }
+    static void signalHandler(int signum)
+    {
+        (void)signum;
+        _running = false;
+    }
     Channel* getChannelByName(const std::string& name);
     Client* getClientByNickname(const std::string& nickname);
     Client* getClientByFD(int fd);
@@ -49,7 +59,7 @@ private:
     std::string _port;
     std::string _pass;
     int _sock;
-    bool _running;
+    static bool _running;
     std::vector<pollfd> _pfds;
     std::map<int, Client*> _clients;
     std::map<std::string, Channel*> channels;
@@ -62,6 +72,8 @@ private:
     std::string read_message(int fd);
     void log(const std::string &message);
 };
+
+extern bool _running;
 
 #endif
 

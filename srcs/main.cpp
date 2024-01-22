@@ -14,12 +14,18 @@
 #include <iostream>
 #include <exception>
 
+volatile sig_atomic_t g_running = 1;
+
 void putError(const std::string& str);
 bool strHasWhitespace(const std::string& str);
 bool strIsNumeric(const std::string& str);
+void signal_handler(int signum)
+{
+    (void)signum;
+    g_running = 0;
+}
 
 int main(int argc, char **argv) {
-
 	if (argc != 3)
 		return putError("Usage: ./ircserv <port> <password>"), 1;
 	std::string port = argv[1];
@@ -30,6 +36,8 @@ int main(int argc, char **argv) {
 		return putError("Error: invalid password"), 1;
 
     try {
+        signal(SIGINT, signal_handler);
+        signal(SIGQUIT, signal_handler);
         Server server(port, password);
         server.start();
     } catch (const std::exception &e) {
