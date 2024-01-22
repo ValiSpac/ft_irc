@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:39 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/13 15:05:38 by akhellad         ###   ########.fr       */
+/*   Updated: 2023/11/13 16:17:08 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -398,16 +398,16 @@ void Server::handleWhoCommand(Client* client, const std::string& channelName) {
     Channel* channel = getChannelByName(channelName);
     if (channel) {
         const std::set<Client*>& members = channel->getMembers();
+        const std::set<Client*>& operators = channel->getOperators();
+
         for (std::set<Client*>::const_iterator it = members.begin(); it != members.end(); ++it) {
             Client* member = *it;
-            if (member) {
-                std::ostringstream response;
-                response << ":" << serverName << " 352 " << client->getNickName() << " "
-                         << channelName << " " << member->getUserName() << " "
-                         << member->getHostName() << " " << serverName << " "
-                         << member->getNickName() << " H :0" << "\r\n";
-                client->sendMessage(response.str());
-            }
+            std::ostringstream response;
+            std::string userPrefix = operators.find(member) != operators.end() ? "@" : ""; // Ajoute '@' si l'utilisateur est un opérateur
+            response << ":" << serverName << " 352 " << client->getNickName() << " " << channelName << " "
+                     << member->getUserName() << " " << member->getHostName() << " " << serverName << " "
+                     << userPrefix << member->getNickName() << " H :0\r\n";
+            client->sendMessage(response.str());
         }
         client->sendMessage(":" + serverName + " 315 " + client->getNickName() + " " + channelName + " :End of WHO list\r\n");
     } else {
