@@ -21,6 +21,36 @@ Channel::Channel(const std::string& name)
         serverName = "ircserv";
 }
 
+void Channel::setTopicOperatorOnly(bool value) {topicOperatorOnly = value;}
+
+bool Channel::isTopicOperatorOnly() const {return topicOperatorOnly;}
+
+bool Channel::isInviteOnly() {return inviteOnly;}
+
+void Channel::setTopic(const std::string& topic) {this->topic = topic;}
+
+const std::string Channel::getName() const {return name;}
+
+const std::set<Client*>& Channel::getMembers() const {return members;}
+
+const std::set<Client*>& Channel::getOperators() const {return operators;}
+
+int Channel::getUserLimit() {return userLimit;}
+
+const std::string Channel::getTopic() const {return topic;}
+
+void Channel::inviteClient(Client* client) {inviteList.insert(client);}
+
+void Channel::setKey(const std::string& key) {channelKey = key;}
+
+bool Channel::isMember(Client* client) const {
+    return members.find(client) != members.end();
+}
+
+bool Channel::isInInvitList(Client* client) const {
+    return inviteList.find(client) != inviteList.end();
+}
+
 void Channel::debugPrintMembers() const {
     std::cout << "Membres du canal " << name << ":" << std::endl;
     for (std::set<Client*>::const_iterator it = members.begin(); it != members.end(); ++it) {
@@ -36,10 +66,6 @@ void Channel::debugPrintMembers() const {
         }
     }
 }
-
-void Channel::setTopicOperatorOnly(bool value) {topicOperatorOnly = value;}
-
-bool Channel::isTopicOperatorOnly() const {return topicOperatorOnly;}
 
 void Channel::addMember(Client* client) {
     if (client == NULL) {
@@ -68,8 +94,6 @@ void Channel::removeMember(Client* client) {
     members.erase(client);
     operators.erase(client);
 }
-
-bool Channel::isInviteOnly() {return inviteOnly;}
 
 bool Channel::isOperator(Client* client)
 {
@@ -116,18 +140,6 @@ void Channel::setOperator(std::string& target,Client* setter)
     }
 }
 
-void Channel::setTopic(const std::string& topic) {this->topic = topic;}
-
-const std::string Channel::getName() const {return name;}
-
-const std::set<Client*>& Channel::getMembers() const {return members;}
-
-const std::set<Client*>& Channel::getOperators() const {return operators;}
-
-int Channel::getUserLimit() {return userLimit;}
-
-const std::string Channel::getTopic() const {return topic;}
-
 void Channel::broadcastPrivateMessage(const std::string& message, const Client* sender) {
     for (std::set<Client*>::iterator it = members.begin(); it != members.end(); ++it) {
         if (*it != sender) {
@@ -135,10 +147,6 @@ void Channel::broadcastPrivateMessage(const std::string& message, const Client* 
         }
     }
 }
-
-void Channel::inviteClient(Client* client) {inviteList.insert(client);}
-
-void Channel::setKey(const std::string& key) {channelKey = key;}
 
 void Channel::setUserLimit(int userLimit)
 {
@@ -211,14 +219,6 @@ void Channel::setMode(Client* setter,std::istringstream& iss)
     std::string is = iss.str();
     std::string modeMessage = ":" + setter->getNickName() + " MODE " + name + " " + sflag + (options.empty() ? "" : " " + options) + "\r\n";
     broadcastPrivateMessage(modeMessage, NULL);
-}
-
-bool Channel::isMember(Client* client) const {
-    return members.find(client) != members.end();
-}
-
-bool Channel::isInInvitList(Client* client) const {
-    return inviteList.find(client) != inviteList.end();
 }
 
 bool Channel::isChannelFull()

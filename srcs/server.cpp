@@ -315,6 +315,13 @@ void Server::handleNickCommand(Client* client, const std::string& nickname) {
     client->sendMessage(":" + serverName + " NICK :" + nickname + "\r\n");
 }
 
+void Server::handlePassCommand(Client* client, const std::string& password) {
+	if (password == this->_pass)
+		client->setAuthentication(true);
+	else
+		client->sendMessage("ERROR :Invalid password\r\n");
+}
+
 void Server::handlePrivMsgCommand(Client* sender, const std::string& target, const std::string& message) {
     if (target[0] == '#') {  // La cible un canal
         Channel* channel = getChannelByName(target);
@@ -477,6 +484,7 @@ void Server::handleQuitCommand(Client* client, const std::string& message)
     client->sendMessage(response.str());
     on_client_disconnect(client->getSocket());
 }
+
 void Server::parseClientCommand(int fd, const std::string& command) {
     Client* client = getClientByFD(fd);
     if (!client) {
@@ -487,15 +495,45 @@ void Server::parseClientCommand(int fd, const std::string& command) {
     std::string cmd;
     iss >> cmd;
 
-    if (cmd == "JOIN") {
-        std::string channelName;
-        iss >> channelName;  // Supposer que la syntaxe est "JOIN #channelname"
-        handleJoinCommand(client, channelName); // Assurez-vous d'avoir une méthode pour trouver le Client par fd
+    if (cmd == "QUIT")
+    {
+        std::string message;
+        std::getline(iss, message);
+        if (!message.empty() && message[0] == ':') {
+            message = message.substr(1);
+        }
+        handleQuitCommand(client, message);
     }
     if (cmd == "NICK") {
         std::string nickname;
         iss >> nickname;
         handleNickCommand(client, nickname);
+    }
+    if (cmd == "USER") {
+        std::string username;
+        std::string hostname;
+        std::string servername;
+        std::string realname;
+    	iss >> username >> hostname >> servername;
+		std::getline(iss >> std::ws, realname);
+		client->setUserName(username);
+		client->setHostName(hostname);
+		client->setRealName(realname);
+    }
+    if (cmd == "PASS") {
+        std::string password;
+        iss >> password;
+        handlePassCommand(client, password);
+    }
+
+	// authenticated user only commands from now on:
+	if (client->getAuthentication() == false)
+		return;
+
+    if (cmd == "JOIN") {
+        std::string channelName;
+        iss >> channelName;  // Supposer que la syntaxe est "JOIN #channelname"
+        handleJoinCommand(client, channelName); // Assurez-vous d'avoir une méthode pour trouver le Client par fd
     }
     if (cmd == "PRIVMSG") {
         std::string target, message;
@@ -513,13 +551,13 @@ void Server::parseClientCommand(int fd, const std::string& command) {
     }
     if (cmd == "TOPIC")
     {
-    std::string channelName, newTopic;
-    iss >> channelName;
-    std::getline(iss, newTopic);
-    if (!newTopic.empty() && newTopic[0] == ':') {
-        newTopic = newTopic.substr(1);
-    }
-    handleTopicCommand(client, channelName, newTopic);
+		std::string channelName, newTopic;
+		iss >> channelName;
+		std::getline(iss, newTopic);
+		if (!newTopic.empty() && newTopic[0] == ':') {
+			newTopic = newTopic.substr(1);
+    	}
+    	handleTopicCommand(client, channelName, newTopic);
     }
     if (cmd == "INVITE") {
         std::string channelName, targetNickname;
@@ -563,19 +601,11 @@ void Server::parseClientCommand(int fd, const std::string& command) {
         }
     }
     if (cmd == "WHO") {
-    std::string target;
-    iss >> target;
-    handleWhoCommand(client, target);
+		std::string target;
+		iss >> target;
+		handleWhoCommand(client, target);
     }
-    if (cmd == "QUIT")
-    {
-        std::string message;
-        std::getline(iss, message);
-        if (!message.empty() && message[0] == ':') {
-            message = message.substr(1);
-        }
-        handleQuitCommand(client, message);
-    }
+
 }
 
 Client* Server::getClientByFD(int fd) {
