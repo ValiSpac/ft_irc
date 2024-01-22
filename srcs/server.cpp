@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:39 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/13 16:17:08 by akhellad         ###   ########.fr       */
+/*   Updated: 2024/01/22 14:58:32 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,17 +84,14 @@ void Server::start()
         if (poll(&_pfds[0], _pfds.size(), -1) < 0) {
             throw std::runtime_error("Error while polling from fd!");
         }
-
         for (size_t i = 0; i < _pfds.size(); i++) {
             if (_pfds[i].revents == 0) {
                 continue;
             }
-
             if (_pfds[i].revents & (POLLHUP | POLLERR)) {
                 on_client_disconnect(_pfds[i].fd);
                 continue;
             }
-
             if (_pfds[i].revents & POLLIN) {
                 if (_pfds[i].fd == _sock) {
                     on_client_connect();
@@ -140,12 +137,9 @@ void Server::on_client_disconnect(int fd) {
     try {
         Client* client = _clients.at(fd);
 
-        // Loguer le message de déconnexion
         char message[1000];
         sprintf(message, "%s:%d has disconnected!", client->getHostName().c_str(), client->get_port());
         log(message);
-
-        // Informer les canaux de la déconnexion du client
         const std::set<Channel*>& channels = client->getChannels();
         for (std::set<Channel*>::const_iterator it = channels.begin(); it != channels.end(); ++it) {
             Channel* channel = *it;
@@ -154,22 +148,14 @@ void Server::on_client_disconnect(int fd) {
             channel->broadcastPrivateMessage(quitMessage, client);
             channel->removeMember(client);
         }
-
-        // Fermer le socket du client
         close(fd);
-
-        // Supprimer le client de la liste
         _clients.erase(fd);
-
-        // Trouver et supprimer le fd correspondant dans _pfds
         for (size_t i = 0; i < _pfds.size(); ++i) {
             if (_pfds[i].fd == fd) {
                 _pfds.erase(_pfds.begin() + i);
                 break;
             }
         }
-
-        // Libérer la mémoire
         delete client;
     }
     catch (const std::exception &e) {
@@ -179,65 +165,44 @@ void Server::on_client_disconnect(int fd) {
 
 void Server::on_client_message(int fd) {
     static std::map<int, std::string> incompleteCommands;
-    char buffer[1024];  // Buffer pour lire les données
+    char buffer[1024];
     int nbytes;
-
-    // Essayer de lire les données du client
     nbytes = read(fd, buffer, sizeof(buffer) - 1);
-
     if (nbytes <= 0) {
-        // Si read renvoie 0, le client a fermé la connexion
-        // Si read renvoie -1, une erreur s'est produite (qui pourrait être EWOULDBLOCK si en mode non bloquant)
         if (nbytes == 0) {
             std::cout << "Client with fd " << fd << " disconnected." << std::endl;
         } else {
             std::cerr << "Error reading from client with fd " << fd << std::endl;
         }
-
         on_client_disconnect(fd);
     } else {
         buffer[nbytes] = '\0';
         std::string data = incompleteCommands[fd] + std::string(buffer);
         size_t pos = 0;
-
         while ((pos = data.find('\n')) != std::string::npos) {
             std::string command = data.substr(0, pos);
             std::cout << "Client with fd " << fd << " sent : " << command << std::endl;
             parseClientCommand(fd, command);
             data.erase(0, pos + 1);
         }
-
-        incompleteCommands[fd] = data; // Stocker la commande incomplète (si elle existe)
+        incompleteCommands[fd] = data;
     }
 }
 
-
-std::string Server::read_message(int )
-{
-    // Similar to your existing read_message function
-    // Add additional logic as per your requirement
-    return (NULL);
-}
-
 void Server::log(const std::string& message) {
-    // Obtenir l'heure et la date actuelles
     std::time_t now = std::time(NULL);
     char buf[100] = {0};
     std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", std::localtime(&now));
-
-    // Écrire le message dans la console
     std::cout << "[" << buf << "] " << message << std::endl;
 }
 
-void Server::handleJoinCommand(Client* client, const std::string& channelName) {
+void Server::handleJoinCommand(Client* client, const std::string& channelName, const std::string& key) {
     if (client->getNickName().empty() || client->getNickName().substr(0, 5) == "Guest") {
         std::string errorMsg = ":" + serverName + " 431 :No nickname given\r\n";
         client->sendMessage(errorMsg);
         return;
     }
-    Channel* channel;
-
-    // Vérifier si le canal existe déjà
+    Channel* channel = NULL;
     std::map<std::string, Channel*>::iterator it = channels.find(channelName);
     if (it != channels.end() && !it->second->isInviteOnly() && !it->second->isChannelFull())
     {
@@ -262,13 +227,18 @@ void Server::handleJoinCommand(Client* client, const std::string& channelName) {
         channel = new Channel(channelName);
         channels[channelName] = channel;
     }
+    std::cout << channel->getKey() << std::endl;
+    std::cout << key << std::endl;
+    if (channel->hasKey()) {
+        if (key != channel->getKey()) {
+            std::string errorMsg = ":" + serverName + " 475 " + client->getNickName() + " " + channelName + " :Cannot join channel (+k)\r\n";
+            client->sendMessage(errorMsg);
+            return;
+        }
+    }
     channel->addMember(client);
-
-    // Préparer le message de connexion pour la diffusion
     std::string joinMessage = ":" + client->getNickName() + "!" + client->getUserName()
                               + "@" + client->getHostName() + " JOIN :" + channelName + "\r\n";
-
-    // Diffuser le message de connexion à tous les membres du canal
     const std::set<Client*>& members = channel->getMembers();
     for (std::set<Client*>::const_iterator it = members.begin(); it != members.end(); ++it) {
         Client* member = *it;
@@ -276,19 +246,13 @@ void Server::handleJoinCommand(Client* client, const std::string& channelName) {
             member->sendMessage(joinMessage);
         }
     }
-
-    // Envoyer les informations sur le canal au client qui a rejoint
     std::ostringstream response;
-
-    // Envoyer le sujet du canal (si disponible)
     if (!channel->getTopic().empty()) {
         response << ":" + serverName + " 332 " << client->getNickName() << " " << channelName
                  << " :" << channel->getTopic() << "\r\n";
         client->sendMessage(response.str());
-        response.str(""); // Effacer le flux
+        response.str("");
     }
-
-    // Envoyer la liste des membres du canal au client qui a rejoint
     response << ":" << serverName << " 353 " << client->getNickName() << " = " << channelName << " :";
     for (std::set<Client*>::const_iterator memberIt = members.begin(); memberIt != members.end(); ++memberIt) {
         if (*memberIt != NULL) {
@@ -300,18 +264,13 @@ void Server::handleJoinCommand(Client* client, const std::string& channelName) {
 }
 
 void Server::handleNickCommand(Client* client, const std::string& nickname) {
-    // Vérifier si le pseudonyme est déjà utilisé par un autre client
     for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
         if (it->second->getNickName() == nickname) {
             client->sendMessage(":" + serverName + " 433 * " + nickname + " :Nickname is already in use\r\n");
             return;
         }
     }
-
-    // Mettre à jour le pseudonyme du client
     client->setNickname(nickname);
-
-    // Envoyer une confirmation au client
     client->sendMessage(":" + serverName + " NICK :" + nickname + "\r\n");
 }
 
@@ -323,7 +282,7 @@ void Server::handlePassCommand(Client* client, const std::string& password) {
 }
 
 void Server::handlePrivMsgCommand(Client* sender, const std::string& target, const std::string& message) {
-    if (target[0] == '#') {  // La cible un canal
+    if (target[0] == '#') {
         Channel* channel = getChannelByName(target);
         if (channel && channel->isMember(sender)) {
             std::string fullMessage = ":" + sender->getNickName() + "!" + sender->getUserName()
@@ -336,15 +295,13 @@ void Server::handlePrivMsgCommand(Client* sender, const std::string& target, con
                     (*it)->sendMessage(fullMessage);
                 }
             }
-
-            // Feedback à l'expéditeur
         } else if (channel && !channel->isMember(sender)){
             sender->sendMessage(":" + serverName + " 404 " + sender->getNickName() + " " + target + " :Cannot send to channel\r\n");
         }
          else if (channel) {
             sender->sendMessage(":" + serverName + " 403 " + sender->getNickName() + " " + target + " :No such channel\r\n");
         }
-    } else {  // La cible est un utilisateur
+    } else {
         Client* recipient = getClientByNickname(target);
         if (recipient) {
             recipient->sendMessage(":" + sender->getNickName() + "!" + sender->getUserName()
@@ -372,7 +329,7 @@ void Server::handleKickCommand(Client* sender, const std::string& channelName, c
                                   << " :Kicked by " << sender->getNickName() << "\r\n";
                 const std::set<Client*>& members = channel->getMembers();
                 for (std::set<Client*>::const_iterator it = members.begin(); it != members.end(); ++it) {
-                    if (*it != target) {  // Ne pas renvoyer le message à l'utilisateur exclu
+                    if (*it != target) {
                         (*it)->sendMessage(responseToChannel.str());
                     }
                 }
@@ -410,7 +367,7 @@ void Server::handleWhoCommand(Client* client, const std::string& channelName) {
         for (std::set<Client*>::const_iterator it = members.begin(); it != members.end(); ++it) {
             Client* member = *it;
             std::ostringstream response;
-            std::string userPrefix = operators.find(member) != operators.end() ? "@" : ""; // Ajoute '@' si l'utilisateur est un opérateur
+            std::string userPrefix = operators.find(member) != operators.end() ? "@" : "";
             response << ":" << serverName << " 352 " << client->getNickName() << " " << channelName << " "
                      << member->getUserName() << " " << member->getHostName() << " " << serverName << " "
                      << userPrefix << member->getNickName() << " H :0\r\n";
@@ -462,7 +419,6 @@ void Server::handlePartCommand(Client* client, const std::string& channelName) {
     Channel* channel = getChannelByName(realChannelName);
     
     if (channel && channel->isMember(client)) {
-        // Construire et envoyer le message PART aux autres membres du canal
         std::string partMessage = ":" + client->getNickName() + "!" + client->getUserName()
                                   + "@" + client->getHostName() + " PART " + realChannelName + "\r\n";
         
@@ -525,22 +481,25 @@ void Server::parseClientCommand(int fd, const std::string& command) {
         iss >> password;
         handlePassCommand(client, password);
     }
-
-	// authenticated user only commands from now on:
 	if (client->getAuthentication() == false)
 		return;
 
     if (cmd == "JOIN") {
         std::string channelName;
-        iss >> channelName;  // Supposer que la syntaxe est "JOIN #channelname"
-        handleJoinCommand(client, channelName); // Assurez-vous d'avoir une méthode pour trouver le Client par fd
+        iss >> channelName;
+        std::string keyArgument;
+        std::getline(iss, keyArgument);
+        if (!keyArgument.empty() && keyArgument[0] == ' ') {
+            keyArgument = keyArgument.substr(1); 
+        }
+        handleJoinCommand(client, channelName, keyArgument);
     }
     if (cmd == "PRIVMSG") {
         std::string target, message;
         iss >> target;
         std::getline(iss, message);
         if (!message.empty() && message[0] == ':') {
-            message = message.substr(1);  // Enlever le ':' initial
+            message = message.substr(1); 
         }
         handlePrivMsgCommand(client, target, message);
     }
@@ -574,7 +533,6 @@ void Server::parseClientCommand(int fd, const std::string& command) {
         iss >> channelName;
         if (!channelName.empty())
         {
-            // Enlever le texte après le nom du canal
             std::string channelName;
             iss >> channelName;
             size_t pos = channelName.find(' ');
@@ -622,7 +580,7 @@ Channel* Server::getChannelByName(const std::string& name) {
     if (it != channels.end()) {
         return it->second;
     } else {
-        return NULL;  // Canal non trouvé
+        return NULL;
     }
 }
 

@@ -1,20 +1,27 @@
-# Nom de votre executable
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#    Makefile                                           :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#    By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#    Created: 2024/01/22 13:03:52 by akhellad          #+#    #+#              #
+#    Updated: 2024/01/22 13:03:56 by akhellad         ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
+
 NAME = ircserv
 
-# Compilateur et flags de compilation
 CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I includes -g3
 
-# Dossiers
 SRCDIR = srcs
 OBJDIR = objs
 INCDIR = includes
 
-# Fichiers sources et objets
 SRC = $(wildcard $(SRCDIR)/*.cpp)
 OBJ = $(SRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
-# Règles
 all: $(NAME)
 
 $(NAME): $(OBJ)

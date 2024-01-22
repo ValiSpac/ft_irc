@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/10 14:47:10 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/13 14:30:29 by akhellad         ###   ########.fr       */
+/*   Updated: 2024/01/22 14:36:12 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,8 +17,8 @@
 #include <string>
 
 Channel::Channel(const std::string& name)
-    : name(name), inviteOnly(false), topicOperatorOnly(false), userLimit(-1) {
-        serverName = "ircserv";
+    : name(name), inviteOnly(false), topicOperatorOnly(false), userLimit(-1), channelHasKey(false) {
+        serverName = "ircserv"; 
 }
 
 void Channel::setTopicOperatorOnly(bool value) {topicOperatorOnly = value;}
@@ -41,7 +41,18 @@ const std::string Channel::getTopic() const {return topic;}
 
 void Channel::inviteClient(Client* client) {inviteList.insert(client);}
 
-void Channel::setKey(const std::string& key) {channelKey = key;}
+void Channel::setKey(const std::string& key) {
+    channelKey = key;
+    channelHasKey = true;
+}
+
+bool Channel::hasKey() const{
+    return channelHasKey;
+}
+
+std::string Channel::getKey() {
+    return(channelKey);
+}
 
 bool Channel::isMember(Client* client) const {
     return members.find(client) != members.end();
@@ -69,11 +80,11 @@ void Channel::debugPrintMembers() const {
 
 void Channel::addMember(Client* client) {
     if (client == NULL) {
-        return; // Ne pas ajouter si le client est NULL
+        return;
     }
     members.insert(client);
     if (members.size() == 1) {
-        operators.insert(client); // Ajouter comme opérateur si c'est le premier membre
+        operators.insert(client);
     }
 }
 
@@ -162,19 +173,17 @@ void Channel::setMode(Client* setter,std::istringstream& iss)
     iss >> sflag;
     iss >> options;
     if (sflag.empty()) {
-        std::string modeString = getModes(); // Assurez-vous que cette méthode existe et renvoie les modes actuels du canal
+        std::string modeString = getModes();
         std::string modeMessage = ":" + serverName + " 324 " + setter->getNickName() + " " + name + " " + modeString + "\r\n";
         setter->sendMessage(modeMessage);
         return;
     }
     if (!isOperator(setter)) {
         std::cerr << "Error: " << setter->getNickName() << " is not a channel operator." << std::endl;
-        // Envoyer un message d'erreur au client
         setter->sendMessage(":" + serverName + " 482 " + setter->getNickName() + " " + name + " :You're not channel operator\r\n");
         return;
     }
         if (sflag.size() < 2 || (sflag[0] != '+' && sflag[0] != '-')) {
-        // Format de drapeau invalide
         std::string errorMessage = ":" + serverName + " 472 " + setter->getNickName() + " " + name + " :Unknown mode flag\r\n";
         setter->sendMessage(errorMessage);
         return;
@@ -191,7 +200,7 @@ void Channel::setMode(Client* setter,std::istringstream& iss)
             topicOperatorOnly = (sign == '+');
             break;
         case 'k':
-            if (sign == '+' && !channelKey.empty()) {
+            if (sign == '+') {
                 setKey(options);
             } else if (sign == '-') {
                 channelKey.clear();
@@ -236,6 +245,5 @@ std::string Channel::getModes() const {
     if (inviteOnly) modeString += "i";
     if (topicOperatorOnly) modeString += "t";
     if (!channelKey.empty()) modeString += "k";
-    // Ajouter d'autres flags de mode ici
     return modeString.empty() ? "+" : "+" + modeString;
 }

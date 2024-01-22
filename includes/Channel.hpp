@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/10 11:26:05 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/13 11:58:41 by akhellad         ###   ########.fr       */
+/*   Updated: 2024/01/22 14:15:41 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,8 @@ public:
     bool isMember(Client* client) const;
     bool isInInvitList(Client* client) const;
     bool isChannelFull();
+    std::string getKey();
+    bool hasKey() const;
 
     void inviteClient(Client* client);
     bool isTopicOperatorOnly() const;
@@ -64,6 +66,7 @@ private:
     std::string channelKey;
     int userLimit;
     std::string serverName;
+    bool channelHasKey;
 };
 
-#endif // CHANNEL_H
+#endif

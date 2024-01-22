@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:12 by akhellad          #+#    #+#             */
-/*   Updated: 2023/11/13 15:05:53 by akhellad         ###   ########.fr       */
+/*   Updated: 2024/01/22 13:45:57 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,7 @@ public:
     ~Server();
     void start();
     void parseClientCommand(int fd, const std::string& command);
-    void handleJoinCommand(Client* client, const std::string& channelName);
+    void handleJoinCommand(Client* client, const std::string& channelName, const std::string& key);
     void handleNickCommand(Client* client, const std::string& nickname);
 	void handlePassCommand(Client* client, const std::string& password);
 
