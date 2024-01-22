@@ -84,7 +84,7 @@ void Server::start()
         if (poll(&_pfds[0], _pfds.size(), -1) < 0) {
             throw std::runtime_error("Error while polling from fd!");
         }
-        for (size_t i = 0; i < _pfds.size(); i++) {
+        for (size_t i = 0; i < _pfds.size(); i++) { 
             if (_pfds[i].revents == 0) {
                 continue;
             }
@@ -130,6 +130,7 @@ void Server::on_client_connect()
 
     char message[1000];
     sprintf(message, "%s:%d has connected.", client->getHostName().c_str(), client->get_port());
+
     log(message);
 }
 
@@ -276,7 +277,11 @@ void Server::handleNickCommand(Client* client, const std::string& nickname) {
 
 void Server::handlePassCommand(Client* client, const std::string& password) {
 	if (password == this->_pass)
+    {
 		client->setAuthentication(true);
+        std::string test = ":" + serverName + " 001 " + client->getNickName() + " :" + "Welcome " + client->getNickName() + "\r\n";
+        client->sendMessage(test);
+    }
 	else
 		client->sendMessage("ERROR :Invalid password\r\n");
 }
@@ -459,6 +464,7 @@ void Server::parseClientCommand(int fd, const std::string& command) {
             message = message.substr(1);
         }
         handleQuitCommand(client, message);
+        return ;
     }
     if (cmd == "NICK") {
         std::string nickname;
