@@ -30,14 +30,9 @@
 
 #define MAX_CONNECTIONS 10
 
-
-bool Server::_running = true;
-
 Server::Server(const std::string &port, const std::string &pass)
-    : _port(port), _pass(pass)
+    : _port(port), _pass(pass), _isRunning(false)
 {
-    static bool _runing;
-    _runing = false;
     _sock = create_socket();
     serverName = "ircserv";
 }
@@ -87,8 +82,9 @@ void Server::start()
     srv.fd = _sock;
     srv.events = POLLIN;
     _pfds.push_back(srv);
+    _isRunning = true;
 
-    while (getIfRunning()) {
+    while (_isRunning) {
         if (poll(&_pfds[0], _pfds.size(), -1) < 0) {
             throw std::runtime_error("Error while polling from fd!");
         }
@@ -603,4 +599,12 @@ Client* Server::getClientByNickname(const std::string& nickname) {
         }
     }
     return NULL;
+}
+
+
+bool Server::getIfRunning(void) const {
+    return _isRunning;
+}
+void Server::setIfRunning(bool isRunning) {
+    _isRunning = isRunning;
 }
