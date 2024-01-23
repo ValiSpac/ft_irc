@@ -14,15 +14,23 @@
 #include <iostream>
 #include <exception>
 
-volatile sig_atomic_t g_running = 1;
-
 void putError(const std::string& str);
 bool strHasWhitespace(const std::string& str);
 bool strIsNumeric(const std::string& str);
+
+
+Server* getMainServer(Server* setter) {
+	static Server* server = NULL;
+	if (setter)
+		server = setter;
+	return server;
+}
+
 void signal_handler(int signum)
 {
     (void)signum;
-    g_running = 0;
+	Server* server = getMainServer(NULL);
+	server->setIfRunning(false);
 }
 
 int main(int argc, char **argv) {
@@ -36,9 +44,10 @@ int main(int argc, char **argv) {
 		return putError("Error: invalid password"), 1;
 
     try {
+        Server server(port, password);
+		getMainServer(&server);
         signal(SIGINT, signal_handler);
         signal(SIGQUIT, signal_handler);
-        Server server(port, password);
         server.start();
     } catch (const std::exception &e) {
         std::cerr << "Exception caught in main: " << e.what() << std::endl;

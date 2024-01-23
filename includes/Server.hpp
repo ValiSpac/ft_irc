@@ -43,23 +43,17 @@ public:
     void handleQuitCommand(Client* client, const std::string& message);
     void handlePartCommand(Client* client, const std::string& channelName);
     void handleWhoCommand(Client* client, const std::string& target);
-    int getIfRunning()
-    {
-        return _running;
-    }
-    static void signalHandler(int signum)
-    {
-        (void)signum;
-        _running = false;
-    }
     Channel* getChannelByName(const std::string& name);
     Client* getClientByNickname(const std::string& nickname);
     Client* getClientByFD(int fd);
+
+    bool getIfRunning(void) const;
+    void setIfRunning(bool isRunning);
 private:
     std::string _port;
     std::string _pass;
     int _sock;
-    static bool _running;
+    bool _isRunning;
     std::vector<pollfd> _pfds;
     std::map<int, Client*> _clients;
     std::map<std::string, Channel*> channels;
@@ -72,8 +66,6 @@ private:
     std::string read_message(int fd);
     void log(const std::string &message);
 };
-
-extern bool _running;
 
 #endif
 
