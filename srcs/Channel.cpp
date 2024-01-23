@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/10 14:47:10 by akhellad          #+#    #+#             */
-/*   Updated: 2024/01/22 14:36:12 by akhellad         ###   ########.fr       */
+/*   Updated: 2024/01/23 11:23:13 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -115,6 +115,36 @@ bool Channel::isOperator(Client* client)
         return false;
 }
 
+void Channel::removeOperator(std::string& target, Client* setter) {
+    std::set<Client*>::iterator memberIt = members.end();
+    for (std::set<Client*>::iterator it = members.begin(); it != members.end(); ++it) {
+        if ((*it)->getNickName() == target) {
+            memberIt = it;
+            break;
+        }
+    }
+    std::set<Client*>::iterator operatorIt = operators.end();
+    for (std::set<Client*>::iterator it = operators.begin(); it != operators.end(); ++it) {
+        if ((*it)->getNickName() == target) {
+            operatorIt = it;
+            break;
+        }
+    }
+    if (operatorIt != operators.end()) {
+        operators.erase(operatorIt);
+        std::string deopMessage = ":" + setter->getNickName() + " MODE " + name + " -o " + target + "\r\n";
+        broadcastPrivateMessage(deopMessage, NULL);
+    } else if (memberIt != members.end()) {
+        std::string errorMessage = ":" + setter->getNickName() + " 482 " + name +
+                                    " :You're not a channel operator\r\n";
+        setter->sendMessage(errorMessage);
+    } else {
+        std::string errorMessage = ":" + setter->getNickName() + " 401 " + name +
+                                    " :No such nick/channel\r\n";
+        setter->sendMessage(errorMessage);
+    }
+}
+
 void Channel::setOperator(std::string& target,Client* setter)
 {
     std::set<Client*>::iterator memberIt = members.end();
@@ -150,6 +180,7 @@ void Channel::setOperator(std::string& target,Client* setter)
         setter->sendMessage(errorMessage);
     }
 }
+
 
 void Channel::broadcastPrivateMessage(const std::string& message, const Client* sender) {
     for (std::set<Client*>::iterator it = members.begin(); it != members.end(); ++it) {
@@ -209,6 +240,9 @@ void Channel::setMode(Client* setter,std::istringstream& iss)
         case 'o':
             if (sign == '+') {
                 setOperator(options, setter);
+            }
+            else if (sign == '-') {
+                removeOperator(options, setter);
             }
             break;
         case 'l':

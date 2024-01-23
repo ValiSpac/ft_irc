@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/10 11:26:05 by akhellad          #+#    #+#             */
-/*   Updated: 2024/01/22 14:15:41 by akhellad         ###   ########.fr       */
+/*   Updated: 2024/01/23 11:20:29 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,7 @@ public:
     void setUserLimit(int userLimit);
     void setKey(const std::string& key);
     void setOperator(std::string& target, Client *setter);
+    void removeOperator(std::string& target, Client *setter);
     void setTopicOperatorOnly(bool value);
     bool isMember(Client* client) const;
     bool isInInvitList(Client* client) const;
