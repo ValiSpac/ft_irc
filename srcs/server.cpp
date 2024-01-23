@@ -6,7 +6,7 @@
 /*   By: akhellad <akhellad@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/09 15:16:39 by akhellad          #+#    #+#             */
-/*   Updated: 2024/01/22 14:58:32 by akhellad         ###   ########.fr       */
+/*   Updated: 2024/01/23 11:38:47 by akhellad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,7 +86,7 @@ void Server::start()
 
     while (_isRunning) {
         if (poll(&_pfds[0], _pfds.size(), -1) < 0) {
-            throw std::runtime_error("Error while polling from fd!");
+            break ;
         }
         for (size_t i = 0; i < _pfds.size(); i++) {
             if (_pfds[i].revents & (POLLHUP | POLLERR)) {
